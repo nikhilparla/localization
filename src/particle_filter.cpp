@@ -22,6 +22,9 @@ using std::string;
 using std::vector;
 using std::normal_distribution;
 
+std::default_random_engine gen;
+vector<LandmarkObs> predicted;
+
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
   /**
    * TODO: Set the number of particles. Initialize all particles to 
@@ -32,7 +35,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
    *   (and others in this file).
    */
    
-  std::default_random_engine gen;
   
   num_particles = 1000;  // TODO: Set the number of particles
   double std_x, std_y, std_theta;  // Standard deviations for x, y, and theta
@@ -68,21 +70,28 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    *  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
    *  http://www.cplusplus.com/reference/random/default_random_engine/
    */
-   
-   // creates a normal (Gaussian) distribution for x,y,theta
-  normal_distribution<double> predict_x(x, std_x);
-  normal_distribution<double> predict_y(y, std_y);
-  normal_distribution<double> predict_theta(theta, std_theta);
-   
-   for(int i=0; i< particles.size(); i++)
-   {
-		particles[i].x = particles[i].x + (velocity/yaw_rate) *
-											(sin(particles[i].theta + yaw_rate*delta_t) - sin(particles[i].theta));
-		particles[i].y = particles[i].y + (velocity/yaw_rate) *
-											(cos(particles[i].theta) - cos(particles[i].theta + yaw_rate*delta_t));
-		particles[i].theta = particles[i].theta + yaw_rate*delta_t;	
-   }
 
+  // First get the measurement
+  for (int i = 0; i < particles.size(); i++)
+  {
+    particles[i].x = particles[i].x + (velocity / yaw_rate) *
+                                          (sin(particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
+    particles[i].y = particles[i].y + (velocity / yaw_rate) *
+                                          (cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
+    particles[i].theta = particles[i].theta + yaw_rate * delta_t;
+
+    // creates a normal (Gaussian) distribution for x,y,theta
+    normal_distribution<double> predict_x(particles[i].x, std_pos[0]);
+    normal_distribution<double> predict_y(particles[i].y, std_pos[1]);
+    normal_distribution<double> predict_theta(particles[i].theta, std_pos[2]);
+
+    // add the noise and sample from it
+    particles[i].x = predict_x(gen);
+    particles[i].y = predict_y(gen);
+    particles[i].theta = predict_theta(gen);
+
+
+  }
 }
 
 void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted, 
@@ -90,18 +99,33 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
   /**
    * TODO: Find the predicted measurement that is closest to each 
    *   observed measurement and assign the observed measurement to this 
-   *   particular landmark.
+   *   particular landmark. Observations is actual landmark measurements observed from the lidar.
+   *  TODO: predicted vector is the predicted measurements b/w one particular particle and 
+   *    all of the map landmarks within sensor range. Perfrom nearest data association and assign 
+   *    each sensor observation a map landmark id associated with it
    * NOTE: this method will NOT be called by the grading code. But you will 
    *   probably find it useful to implement this method and use it as a helper 
    *   during the updateWeights phase.
    */
-   
-
+  // for all observations, calculate the least distance and assign that id to that observation
+  double min_distance = 50;   // initializing to max range ie sensor range
+  for (int i = 0; i < observations.size(); i++)
+  {
+    for (int j = 0; j < predicted.size(); j++)
+    {
+      double distance = dist(predicted[j].x, predicted[j].y, observations[i].x, observations[i].y);
+      if(distance < min_distance){
+        min_distance = distance;
+        observations[i].id = predicted[j].id;
+      }
+    }
+  }
 }
 
-void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
-                                   const vector<LandmarkObs> &observations, 
-                                   const Map &map_landmarks) {
+void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
+                                   const vector<LandmarkObs> &observations,
+                                   const Map &map_landmarks)
+{
   /**
    * TODO: Update the weights of each particle using a mult-variate Gaussian 
    *   distribution. You can read more about this distribution here: 
@@ -116,6 +140,51 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    *   (look at equation 3.33) http://planning.cs.uiuc.edu/node99.html
    */
 
+  // 1. populate the predicted vector to send to data association function
+  //  1.a. you have to do map trnasformations for this
+  // 2. call the data asssociation fucn with predicted and observations
+  // 3. implement the data association function and get the updated ids for landmarks
+  // 4. continue updatedweights function
+
+  vector<LandmarkObs> predicted;
+  double distance;
+  LandmarkObs obs;
+
+  // copying the observations for passing it to dataAssociation func.
+  // observations is a const so cannot send it directly
+  vector<LandmarkObs> observs;
+  //for (int j = 0; j < observations.size(); j++)
+ //   observs.push_back(observations[j]);
+
+  // paritcles and landmarks are in map coordinates.
+  // No trnasofmration required here
+  for (int i = 0; i < particles.size(); i++)
+  {
+    for (int k = 0; k < map_landmarks.landmark_list.size(); k++)
+    {
+      distance = (dist(particles[i].x, particles[i].y,
+                       map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[k].y_f));
+      if (distance <= sensor_range)
+      {
+        obs.id = map_landmarks.landmark_list[k].id_i;
+        obs.x = (double)map_landmarks.landmark_list[k].x_f;
+        obs.y = (double)map_landmarks.landmark_list[k].y_f;
+        predicted.push_back(obs);
+      }
+    } // all landmarks done
+
+    // convert observation coords to map coords for data association
+    for (int j = 0; j < observations.size(); j++)
+    {
+      float xm = particles[i].x + cos(particles[i].theta * observations[j].x) - 
+                                  sin(particles[i].theta * observations[j].y);
+      float ym = particles[i].y + sin(particles[i].theta * observations[j].x) + 
+                                  cos(particles[i].theta * observations[j].y);
+      observs[j].x = xm;
+      observs[j].y = ym;                            
+    }
+    dataAssociation(predicted, observs);
+  } //all particles done
 }
 
 void ParticleFilter::resample() {
