@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "helper_functions.h"
+#include "multi_gauss.h"
 
 using std::string;
 using std::vector;
@@ -56,7 +57,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	  particles[i].theta 	= dist_theta(gen);
 	  particles[i].weight 	= 1;
 	  
-	  weights.append(particles[i].weight);
+	  weights.push_back(particles[i].weight);
   }
   is_initialized = true;
 }
@@ -153,8 +154,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   // copying the observations for passing it to dataAssociation func.
   // observations is a const so cannot send it directly
   vector<LandmarkObs> observs;
-  //for (int j = 0; j < observations.size(); j++)
- //   observs.push_back(observations[j]);
+  vector<double> weights_particles;
 
   // paritcles and landmarks are in map coordinates.
   // No trnasofmration required here
@@ -176,14 +176,34 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // convert observation coords to map coords for data association
     for (int j = 0; j < observations.size(); j++)
     {
-      float xm = particles[i].x + cos(particles[i].theta * observations[j].x) - 
-                                  sin(particles[i].theta * observations[j].y);
-      float ym = particles[i].y + sin(particles[i].theta * observations[j].x) + 
-                                  cos(particles[i].theta * observations[j].y);
+      float xm = particles[i].x + cos(particles[i].theta * observations[j].x) -
+                 sin(particles[i].theta * observations[j].y);
+      float ym = particles[i].y + sin(particles[i].theta * observations[j].x) +
+                 cos(particles[i].theta * observations[j].y);
       observs[j].x = xm;
-      observs[j].y = ym;                            
+      observs[j].y = ym;
     }
     dataAssociation(predicted, observs);
+
+    vector<double> weights_obs;
+    double total_obs_weight = 1;
+    double mu_x, mu_y;
+    //double final_weight = 1;
+    for (int j = 0; j < observs.size(); i++)
+    {
+      for (int k = 0; k < map_landmarks.landmark_list.size(); k++)
+      {
+        if (map_landmarks.landmark_list[k].id_i == observs[j].id)
+        {
+          mu_x = map_landmarks.landmark_list[k].x_f;
+          mu_y = map_landmarks.landmark_list[k].y_f;
+        }
+      }
+      weights_obs[j] = multiv_prob(std_landmark[0], std_landmark[1], observs[j].x, observs[j].y,
+                                   mu_x, mu_y);
+      total_obs_weight = total_obs_weight * weights_obs[j];
+    }
+    particles[i].weight = total_obs_weight;
   } //all particles done
 }
 
