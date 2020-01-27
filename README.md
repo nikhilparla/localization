@@ -2,7 +2,12 @@
 #### Implementation notes 
  - commit 6c05ab4 - Initialized the pf init function with weights and measurements
  - commit 48d0625 - Updated the prediction step for one cycle with the given velocity and yaw rate
- - commit 910e9bb - Completed the implementation part. Core dump error on when run in the workspace
+ - commit 910e9bb - Completed the implementation part. 
+ - commit         - Segmentation fault resolved. 
+     - Vectors have to assigned a size before populating them
+     - Used vector.resize() to initialize all before assignment
+     - In updateWeights(), break for loop once landmark has been found
+     - Reduce num_particles to 50 for initial trail
 
 #### Build notes
  - Change CMakeLists.txt to include the code for multivariate gaussian dist code
