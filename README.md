@@ -8,6 +8,10 @@
      - Used vector.resize() to initialize all before assignment
      - In updateWeights(), break for loop once landmark has been found
      - Reduce num_particles to 50 for initial trail
+ - commit         - large error
+     - Changed the way weights are sampled. Used a placeholder particles vector
+     - weight variable init to 1.0 for double
+     - Removed couts now that no runtime errors
 
 #### Build notes
  - Change CMakeLists.txt to include the code for multivariate gaussian dist code
