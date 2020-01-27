@@ -21,6 +21,9 @@
      - Change the way weights are calculated when there is a very very low weight
      - Still large error but atleast the weights are updating fine
      - Observe that for many loops, highest weight and avg weight are same
+ - commit         - yaw rate division check
+     - If yaw rate is very less, change the prediction coordinate calculations
+     - prediction vector has to be reset for every particle
 
     
 

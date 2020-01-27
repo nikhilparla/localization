@@ -37,7 +37,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
    *   (and others in this file).
    */
    
-  num_particles = 50;  // TODO: Set the number of particles
+  num_particles = 75;  // TODO: Set the number of particles
   particles.resize(num_particles);
   double std_x, std_y, std_theta;  // Standard deviations for x, y, and theta
   
@@ -81,6 +81,10 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
   // First get the measurement
   for (uint i = 0; i < particles.size(); i++)
   {
+    if(fabs(yaw_rate) < 0.001){
+      particles[i].x += velocity * delta_t * cos(particles[i].theta);
+      particles[i].y += velocity * delta_t * sin(particles[i].theta);
+    }
     particles[i].x = particles[i].x + (velocity / yaw_rate) *
                                           (sin(particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
     particles[i].y = particles[i].y + (velocity / yaw_rate) *
@@ -110,7 +114,7 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
    *   during the updateWeights phase.
    */
   // for all observations, calculate the least distance and assign that id to that observation
-  double min_distance = 50;   // initializing to max range ie sensor range
+  double min_distance = 100;   // initializing to max range ie double sensor range
   for (uint i = 0; i < observations.size(); i++)
   {
     for (uint j = 0; j < predicted.size(); j++)
@@ -192,10 +196,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     vector<double> weights_obs;
     weights_obs.resize(observations.size());
     double mu_x, mu_y;  // making them global
-    //double final_weight = 1;
     for (uint j = 0; j < observs.size(); j++)
     {
-      //#if 0
       for (uint k = 0; k < predicted.size(); k++)
       {
         if (predicted[k].id == observs[j].id)
@@ -205,7 +207,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
           break;  // break the loop if the id found
         }
       }
-      //#endif
       weights_obs[j] = multiv_prob(std_landmark[0], std_landmark[1], observs[j].x, observs[j].y,
                                    mu_x, mu_y);
       if (weights_obs[j] < small_value) // catch zero multiplication
@@ -215,6 +216,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     }
    
     weights[i] = particles[i].weight;
+
+    // clear stuff for next particle
+    predicted.clear();
 
   } //all particles done
 }
