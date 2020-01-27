@@ -73,7 +73,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    */
 
   // First get the measurement
-  for (int i = 0; i < particles.size(); i++)
+  for (uint i = 0; i < particles.size(); i++)
   {
     particles[i].x = particles[i].x + (velocity / yaw_rate) *
                                           (sin(particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
@@ -110,9 +110,9 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
    */
   // for all observations, calculate the least distance and assign that id to that observation
   double min_distance = 50;   // initializing to max range ie sensor range
-  for (int i = 0; i < observations.size(); i++)
+  for (uint i = 0; i < observations.size(); i++)
   {
-    for (int j = 0; j < predicted.size(); j++)
+    for (uint j = 0; j < predicted.size(); j++)
     {
       double distance = dist(predicted[j].x, predicted[j].y, observations[i].x, observations[i].y);
       if(distance < min_distance){
@@ -158,9 +158,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
   // paritcles and landmarks are in map coordinates.
   // No trnasofmration required here
-  for (int i = 0; i < particles.size(); i++)
+  for (uint i = 0; i < particles.size(); i++)
   {
-    for (int k = 0; k < map_landmarks.landmark_list.size(); k++)
+    for (uint k = 0; k < map_landmarks.landmark_list.size(); k++)
     {
       distance = (dist(particles[i].x, particles[i].y,
                        map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[k].y_f));
@@ -174,7 +174,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     } // all landmarks done
 
     // convert observation coords to map coords for data association
-    for (int j = 0; j < observations.size(); j++)
+    for (uint j = 0; j < observations.size(); j++)
     {
       float xm = particles[i].x + cos(particles[i].theta * observations[j].x) -
                  sin(particles[i].theta * observations[j].y);
@@ -189,9 +189,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     double total_obs_weight = 1;
     double mu_x, mu_y;
     //double final_weight = 1;
-    for (int j = 0; j < observs.size(); i++)
+    for (uint j = 0; j < observs.size(); i++)
     {
-      for (int k = 0; k < map_landmarks.landmark_list.size(); k++)
+      for (uint k = 0; k < map_landmarks.landmark_list.size(); k++)
       {
         if (map_landmarks.landmark_list[k].id_i == observs[j].id)
         {
@@ -204,6 +204,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       total_obs_weight = total_obs_weight * weights_obs[j];
     }
     particles[i].weight = total_obs_weight;
+    weights[i] = particles[i].weight;
   } //all particles done
 }
 
@@ -214,7 +215,12 @@ void ParticleFilter::resample() {
    * NOTE: You may find std::discrete_distribution helpful here.
    *   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
    */
-
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::discrete_distribution<> d(weights.begin(), weights.end());
+    for(uint i=0; i < particles.size(); i++){
+      particles[i] = particles[d(gen)];
+    }
 }
 
 void ParticleFilter::SetAssociations(Particle& particle, 
