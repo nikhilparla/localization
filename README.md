@@ -12,6 +12,12 @@
      - Changed the way weights are sampled. Used a placeholder particles vector
      - weight variable init to 1.0 for double
      - Removed couts now that no runtime errors
+ - commit         - reset weights and changed floats to doubles
+     - weights for the particles are reset to 1.0 after every iteration
+     - couple of particle coordinates are initialized as floats. Should be doubles
+     - Reduced the search for landmark coords from whole map to just predicted values
+     - See good improvement in error, but still large
+    
 
 #### Build notes
  - Change CMakeLists.txt to include the code for multivariate gaussian dist code

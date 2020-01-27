@@ -72,6 +72,11 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    *  http://www.cplusplus.com/reference/random/default_random_engine/
    */
 
+    // creates a normal (Gaussian) distribution for x,y,theta
+    normal_distribution<double> predict_x(0, std_pos[0]);
+    normal_distribution<double> predict_y(0, std_pos[1]);
+    normal_distribution<double> predict_theta(0, std_pos[2]);
+
   // First get the measurement
   for (uint i = 0; i < particles.size(); i++)
   {
@@ -81,17 +86,13 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
                                           (cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
     particles[i].theta = particles[i].theta + yaw_rate * delta_t;
 
-    // creates a normal (Gaussian) distribution for x,y,theta
-    normal_distribution<double> predict_x(particles[i].x, std_pos[0]);
-    normal_distribution<double> predict_y(particles[i].y, std_pos[1]);
-    normal_distribution<double> predict_theta(particles[i].theta, std_pos[2]);
 
     // add the noise and sample from it
-    particles[i].x = predict_x(gen);
-    particles[i].y = predict_y(gen);
-    particles[i].theta = predict_theta(gen);
-
+    particles[i].x += predict_x(gen);
+    particles[i].y +=predict_y(gen);
+    particles[i].theta += predict_theta(gen);
   }
+
 }
 
 void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted, 
@@ -175,14 +176,17 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // convert observation coords to map coords for data association
     for (uint j = 0; j < observations.size(); j++)
     {
-      float xm = particles[i].x + cos(particles[i].theta * observations[j].x) -
+      double xm = particles[i].x + cos(particles[i].theta * observations[j].x) -
                  sin(particles[i].theta * observations[j].y);
-      float ym = particles[i].y + sin(particles[i].theta * observations[j].x) +
+      double ym = particles[i].y + sin(particles[i].theta * observations[j].x) +
                  cos(particles[i].theta * observations[j].y);
       observs[j].x = xm;
       observs[j].y = ym;
     }
     dataAssociation(predicted, observs);
+
+    // reset particle's weight before calculating new one
+    particles[i].weight = 1.0;
 
     vector<double> weights_obs;
     weights_obs.resize(observations.size());
@@ -192,12 +196,12 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     for (uint j = 0; j < observs.size(); j++)
     {
       //#if 0
-      for (uint k = 0; k < map_landmarks.landmark_list.size(); k++)
+      for (uint k = 0; k < predicted.size(); k++)
       {
-        if (map_landmarks.landmark_list[k].id_i == observs[j].id)
+        if (predicted[k].id_i == observs[j].id)
         {
-          mu_x = map_landmarks.landmark_list[k].x_f;
-          mu_y = map_landmarks.landmark_list[k].y_f;
+          mu_x = predicted[k].x_f;
+          mu_y = predicted[k].y_f;
           break;  // break the loop if the id found
         }
       }
