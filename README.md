@@ -17,6 +17,11 @@
      - couple of particle coordinates are initialized as floats. Should be doubles
      - Reduced the search for landmark coords from whole map to just predicted values
      - See good improvement in error, but still large
+ - commit         - catch zero multiplication
+     - Change the way weights are calculated when there is a very very low weight
+     - Still large error but atleast the weights are updating fine
+     - Observe that for many loops, highest weight and avg weight are same
+
     
 
 #### Build notes

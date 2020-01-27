@@ -25,6 +25,7 @@ using std::normal_distribution;
 
 std::default_random_engine gen;
 vector<LandmarkObs> predicted;
+double small_value = 0.000001;  // tweak and check
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
   /**
@@ -190,7 +191,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
     vector<double> weights_obs;
     weights_obs.resize(observations.size());
-    double total_obs_weight = 1;
     double mu_x, mu_y;  // making them global
     //double final_weight = 1;
     for (uint j = 0; j < observs.size(); j++)
@@ -198,19 +198,22 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       //#if 0
       for (uint k = 0; k < predicted.size(); k++)
       {
-        if (predicted[k].id_i == observs[j].id)
+        if (predicted[k].id == observs[j].id)
         {
-          mu_x = predicted[k].x_f;
-          mu_y = predicted[k].y_f;
+          mu_x = predicted[k].x;
+          mu_y = predicted[k].y;
           break;  // break the loop if the id found
         }
       }
       //#endif
       weights_obs[j] = multiv_prob(std_landmark[0], std_landmark[1], observs[j].x, observs[j].y,
                                    mu_x, mu_y);
-      total_obs_weight = total_obs_weight * weights_obs[j];
+      if (weights_obs[j] < small_value) // catch zero multiplication
+        particles[i].weight *= small_value;
+      else
+        particles[i].weight *= weights_obs[j];
     }
-    particles[i].weight = total_obs_weight;
+   
     weights[i] = particles[i].weight;
 
   } //all particles done
