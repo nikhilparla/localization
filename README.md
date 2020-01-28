@@ -24,6 +24,13 @@
  - commit         - yaw rate division check
      - If yaw rate is very less, change the prediction coordinate calculations
      - prediction vector has to be reset for every particle
+ - commit         - successful
+     - Added a bunch of couts for debugging
+     - changed the observations vector handling. Used pushback calls
+     - changed prediction step when yawrate is 0. Div by 0 catch
+     - The biggest mistake was the brackets arounf cos and sin theta in map transformations. 
+     - Errors min and successful
+
 
     
 
