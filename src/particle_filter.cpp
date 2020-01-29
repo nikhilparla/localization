@@ -30,15 +30,15 @@ double small_value = 0.000001; // tweak and check
 void ParticleFilter::init(double x, double y, double theta, double std[])
 {
   /**
-   * TODO: Set the number of particles. Initialize all particles to 
+   *  Set the number of particles. Initialize all particles to 
    *   first position (based on estimates of x, y, theta and their uncertainties
    *   from GPS) and all weights to 1. 
-   * TODO: Add random Gaussian noise to each particle.
+   *  Add random Gaussian noise to each particle.
    * NOTE: Consult particle_filter.h for more information about this method 
    *   (and others in this file).
    */
 
-  num_particles = 50; // TODO: Set the number of particles
+  num_particles = 50; 
   particles.resize(num_particles);
   double std_x, std_y, std_theta; // Standard deviations for x, y, and theta
 
@@ -69,7 +69,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
                                 double velocity, double yaw_rate)
 {
   /**
-   * TODO: Add measurements to each particle and add random Gaussian noise.
+   *  Add measurements to each particle and add random Gaussian noise.
    * NOTE: When adding noise you may find std::normal_distribution 
    *   and std::default_random_engine useful.
    *  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
@@ -111,10 +111,10 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
                                      vector<LandmarkObs> &observations)
 {
   /**
-   * TODO: Find the predicted measurement that is closest to each 
+   *  Find the predicted measurement that is closest to each 
    *   observed measurement and assign the observed measurement to this 
    *   particular landmark. Observations is actual landmark measurements observed from the lidar.
-   *  TODO: predicted vector is the predicted measurements b/w one particular particle and 
+   *   predicted vector is the predicted measurements b/w one particular particle and 
    *    all of the map landmarks within sensor range. Perfrom nearest data association and assign 
    *    each sensor observation a map landmark id associated with it
    * NOTE: this method will NOT be called by the grading code. But you will 
@@ -144,7 +144,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
                                    const Map &map_landmarks)
 {
   /**
-   * TODO: Update the weights of each particle using a mult-variate Gaussian 
+   *  Update the weights of each particle using a mult-variate Gaussian 
    *   distribution. You can read more about this distribution here: 
    *   https://en.wikipedia.org/wiki/Multivariate_normal_distribution
    * NOTE: The observations are given in the VEHICLE'S coordinate system. 
@@ -177,7 +177,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   // No trnasofmration required here
   for (uint i = 0; i < particles.size(); i++)
   {
-    std::cout << "particle " << i << std::endl;
+    //std::cout << "particle " << i << std::endl;
     for (uint lm = 0; lm < map_landmarks.landmark_list.size(); lm++)
     {
       distance = (dist(particles[i].x, particles[i].y,
@@ -201,7 +201,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       obs.y = particles[i].y + (sin(particles[i].theta) * observations[ob].x) +
                   (cos(particles[i].theta) * observations[ob].y);
       observs.push_back(obs);
-      std::cout << "\t\t obs_after = ( " << obs.x <<","<< obs.y <<" )" <<std::endl;
+      //std::cout << "\t\t obs_after = ( " << obs.x <<","<< obs.y <<" )" <<std::endl;
       
     }
     dataAssociation(predicted, observs);
@@ -243,7 +243,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 void ParticleFilter::resample()
 {
   /**
-   * TODO: Resample particles with replacement with probability proportional 
+   * Resample particles with replacement with probability proportional 
    *   to their weight. 
    * NOTE: You may find std::discrete_distribution helpful here.
    *   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
